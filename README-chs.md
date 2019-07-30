@@ -31,7 +31,6 @@ blk(1024);\
 return view.tag;";
 
 ASTNode* root = [ASTUtil parseString:text];
-[ASTUtil linkContextToRoot:root];
 ASTVariable* result = [root execute];
 NSAssert([result.value doubleValue] == 1024, nil);
 ```
@@ -48,7 +47,6 @@ NSString* text = @" \
 return echo(1024);";
 
 ASTNode* root = [ASTUtil parseString:text];
-[ASTUtil linkContextToRoot:root];
 ASTVariable* result = [root execute];
 NSAssert([result.value doubleValue] == 1024, nil);
 ```
@@ -64,7 +62,6 @@ objc_setAssociatedObject(self, key, @(1024), 1);\
 return objc_getAssociatedObject(self, key);";
 
 ASTNode* root = [ASTUtil parseString:text];
-[ASTUtil linkContextToRoot:root];
 ASTVariable* result = [root execute];
 NSAssert([result.value doubleValue] == 1024, nil);
 ```
@@ -88,7 +85,7 @@ NSAssert([result.value doubleValue] == 1024, nil);
 * [x] most of objective-c keyword
 
 ## TODO
-* [ ] @avaiable()
+* [ ] @available()
 * [ ] [NSString stringWithFormat:"%d",value] : use [NSString stringWithFormat:"%@",@(value)] instead。
 * [ ] dispatch_async / dispatch_after ...
 * [ ] *stop =YES, in block

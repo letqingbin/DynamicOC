@@ -22,7 +22,7 @@
 {
     NSString* text = @"int i; for(i=0;i<10;i++){} return i;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 10, nil);
 }
@@ -31,7 +31,7 @@
 {
     NSString* text = @"int i; for(i=0;i<10;i++); return i;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 10, nil);
 }
@@ -40,7 +40,7 @@
 {
     NSString* text = @"int i=0;for(;i<10;i++); return i;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 10, nil);
 }
@@ -49,7 +49,7 @@
 {
     NSString* text = @"int i;for(i=0;i<10;i++); return i;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 10, nil);
 }
@@ -58,7 +58,7 @@
 {
     NSString* text = @"int i; for(i=0;i<10;){ i++;} return i;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 10, nil);
 }
@@ -67,7 +67,7 @@
 {
     NSString* text = @"int i; for(i=0;i<10;i++){ if(i==5)break;} return i;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 5, nil);
 }
@@ -76,7 +76,7 @@
 {
     NSString* text = @"for(int i=0;i<10;i++){ if(i==5) return i;}";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 5, nil);
 }
@@ -85,7 +85,7 @@
 {
     NSString* text = @"int j = 0; for(int i=0;i<10;i++){ if(j==5) continue; j++;} return j;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 5, nil);
 }
@@ -95,7 +95,7 @@
 {
     NSString* text = @"for(int i=0;i<10;i++){ } return i;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert(result.value == nil, nil);
 }

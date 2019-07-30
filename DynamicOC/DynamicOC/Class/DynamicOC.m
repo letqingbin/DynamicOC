@@ -44,7 +44,6 @@ extern NSMutableDictionary* gblVariables;
 	}
     
     ASTNode* rootNode = [ASTUtil parseString:imp];
-	[ASTUtil linkContextToRoot:rootNode];
 
 	NSError *error;
 	[class aspect_hookSelector:selector withOptions:AspectPositionInstead usingBlock:^(id<AspectInfo> aspectInfo) {

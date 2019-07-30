@@ -342,6 +342,8 @@ static NSMutableDictionary* _typeEncodeDict = nil;
 	yyparse();
 	yy_delete_buffer(buf);
 
+    [ASTUtil linkContextToRoot:gblRootNode];
+    
 	return gblRootNode;
 }
 

@@ -22,7 +22,7 @@
 {
     NSString* text = @"int i=1;int j=++i; return j;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 2, nil);
 }
@@ -31,7 +31,7 @@
 {
     NSString* text = @"int i=1;int j=--i; return j;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 0, nil);
 }
@@ -40,7 +40,7 @@
 {
     NSString* text = @"int i=1;int j=i++; return j;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1, nil);
 }
@@ -49,7 +49,7 @@
 {
     NSString* text = @"int i=1;int j=i++; return i;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 2, nil);
 }
@@ -58,7 +58,7 @@
 {
     NSString* text = @"int i=1;int j=i--; return j;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1, nil);
 }
@@ -67,7 +67,7 @@
 {
     NSString* text = @"int i=1;int j=i--; return i;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 0, nil);
 }
@@ -76,7 +76,7 @@
 {
     NSString* text = @"int i=1;int j=+i; return j;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1, nil);
 }
@@ -85,7 +85,7 @@
 {
     NSString* text = @"int i=1;int j=-i; return j;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == -1, nil);
 }
@@ -94,7 +94,7 @@
 {
     NSString* text = @"int i=1;int j=-(-i); return j;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1, nil);
 }
@@ -103,7 +103,7 @@
 {
     NSString* text = @"int i=0; i = !i; return i;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1, nil);
 }
@@ -112,7 +112,7 @@
 {
     NSString* text = @"NSNumber* ival = @(0); BOOL ok = !ival; return ok;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == NO, nil);
 }
@@ -121,7 +121,7 @@
 {
     NSString* text = @"NSNumber* ival = nil; BOOL ok = !ival; return ok;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == YES, nil);
 }

@@ -22,7 +22,7 @@
 {
 	NSString* text = @"int i=1;if(i==1){ return 1024; }";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -37,7 +37,7 @@
 {
 	NSString* text = @"int i=1; int j=2; if(i==j){ return i; } else { return j; }";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value doubleValue] == 2, nil);
 }
@@ -46,7 +46,7 @@
 {
 	NSString* text = @"int i=1; int j=2; if(i==j){ return i; } else if( i<= j) { return j; }";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value doubleValue] == 2, nil);
 }
@@ -55,7 +55,7 @@
 {
 	NSString* text = @"int i=1; int j=2; if(i==j){ return i; } else if( i>= j) { return j; } else { return 1024; }";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -64,7 +64,7 @@
 {
 	NSString* text = @"NSNumber* ival = @(0);if(ival){ return YES; }";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value boolValue] == YES, nil);
 }
@@ -73,7 +73,7 @@
 {
 	NSString* text = @"NSNumber* ival = @(0);if(!ival){ return YES; } else { return NO; }";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value boolValue] == NO, nil);
 }
@@ -82,7 +82,7 @@
 {
 	NSString* text = @"NSString* str = @\"abcdefg\"; if(str.length > 0) { return str; }";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value isEqualToString:@"abcdefg"], nil);
 }
@@ -91,7 +91,7 @@
 {
 	NSString* text = @"NSString* str = @\"abcdefg\"; if(str) { return str; }";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value isEqualToString:@"abcdefg"], nil);
 }
@@ -100,7 +100,7 @@
 {
     NSString* text = @"NSNumber* ival = nil; if(ival) { return 0; } else { return 1024; }";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -109,7 +109,7 @@
 {
     NSString* text = @"NSNumber* ival = nil; if(!ival) { return 1024; } else { return 0; }";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -118,7 +118,7 @@
 {
     NSString* text = @"if(YES) { return 1024; } else { return 0; }";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -127,7 +127,7 @@
 {
     NSString* text = @"if(YES && NO) { return 1024; } else { return 0; }";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 0, nil);
 }
@@ -136,7 +136,7 @@
 {
     NSString* text = @"if((YES) && (NO)) { return 1024; } else { return 0; }";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 0, nil);
 }
@@ -145,7 +145,7 @@
 {
     NSString* text = @"if((YES) || (NO)) { return 1024; } else { return 0; }";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -154,7 +154,7 @@
 {
     NSString* text = @"if((true) || (false)) { return 1024; } else { return 0; }";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -163,7 +163,7 @@
 {
 	NSString* text = @"CGRect rect = CGRectMake(1,2,3,4); if(rect.size.width == 3) return rect;";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert(CGRectEqualToRect([result.value CGRectValue], CGRectMake(1,2,3,4)), nil);
 }
@@ -172,7 +172,7 @@
 {
 	NSString* text = @"UIView* view = [[UIView alloc]init]; view.tag = 1024; if(view.tag == 1024) return view.tag;";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -181,7 +181,7 @@
 {
 	NSString* text = @"UIView* view = [[UIView alloc]init]; view.tag = 1; if(view.tag != 1024) return 6666;";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value doubleValue] == 6666, nil);
 }
@@ -190,7 +190,7 @@
 {
     NSString* text = @"NSArray* array = @[@(1)]; if(array.count>0) return 6666;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 6666, nil);
 }
@@ -199,7 +199,7 @@
 {
     NSString* text = @"if([NSString string] != nil) return 6666; else return 1024;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 6666, nil);
 }
@@ -208,7 +208,7 @@
 {
     NSString* text = @"if(3 <= 4 && [NSString string] != nil) return 6666; else return 1024;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 6666, nil);
 }
@@ -217,7 +217,7 @@
 {
     NSString* text = @"int i=1; if(i > 0) i = 2; if(i < 0) i = 666; else i = 1024; return i;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -226,7 +226,7 @@
 {
     NSString* text = @"int i=1;int j=2;int k = i <= j ? 666 : 1024; return k;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 666, nil);
 }
@@ -235,7 +235,7 @@
 {
     NSString* text = @"int i=1;int j=2;int k = i > j ? 666 : 1024; return k;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -244,7 +244,7 @@
 {
     NSString* text = @"int i=1;int j=2;int k = (i <= j) ? 666 : 1024; return k;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 666, nil);
 }
@@ -253,7 +253,7 @@
 {
     NSString* text = @"NSNumber* ival = @(0);int k = ival ? 666 : 1024; return k;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 666, nil);
 }
@@ -262,7 +262,7 @@
 {
     NSString* text = @"NSNumber* ival = @(0);int k = !ival ? 666 : 1024; return k;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -271,7 +271,7 @@
 {
     NSString* text = @"NSString* str = @\"abcedf\";int k = str.length > 0 ? 666 : 1024; return k;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 666, nil);
 }
@@ -280,7 +280,7 @@
 {
     NSString* text = @"NSString* str = @\"abcedf\";int k = [str length] > 0 ? 666 : 1024; return k;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 666, nil);
 }
@@ -289,7 +289,7 @@
 {
     NSString* text = @"NSArray* array = @[@(1),@(2)];int k = array.count > 0 ? 666 : 1024; return k;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 666, nil);
 }
@@ -298,7 +298,7 @@
 {
     NSString* text = @"NSArray* array = @[@(1),@(2)];int k = [array count] > 0 ? 666 : 1024; return k;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 666, nil);
 }
@@ -307,7 +307,7 @@
 {
     NSString* text = @"NSArray* array = @[@(1),@(2)];int k = array[0] > 0 ? 666 : 1024; return k;";
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 666, nil);
 }
@@ -325,8 +325,7 @@
 	NSString* text = @"if(!self) return 666; else return 1024;";
 
 	ASTNode* root = [ASTUtil parseString:text];
-	ASTContext* context = [ASTUtil linkContextToRoot:root];
-	[context pushDefinedContext:ctx];
+	[root.context pushDefinedContext:ctx];
 
 	ASTVariable* result = [root execute];
 	NSAssert([result.value doubleValue] == 1024, nil);

@@ -41,7 +41,7 @@ NSString* funcWithOCArg(NSString* str)
 
 	NSString* text = @"int i = funcWithNoArgs(); return i;";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -52,7 +52,7 @@ NSString* funcWithOCArg(NSString* str)
 
 	NSString* text = @"return funcWithOneArg(1024);";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -63,7 +63,7 @@ NSString* funcWithOCArg(NSString* str)
     
 	NSString* text = @"return funcWithOCArg(@\"hello iOS!\");";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value isEqualToString:@"hello iOS!"], nil);
 }
@@ -74,7 +74,7 @@ NSString* funcWithOCArg(NSString* str)
 
 	NSString* text = @"Class cls = NSClassFromString(@\"NSObject\"); return cls;";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert(result.value == [NSObject class], nil);
 }
@@ -85,7 +85,7 @@ NSString* funcWithOCArg(NSString* str)
 
 	NSString* text = @"SEL sel = NSSelectorFromString(@\"alloc\"); return sel;";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	SEL sel = [result.value pointerValue];
 	NSAssert([NSStringFromSelector(sel) isEqualToString:@"alloc"], nil);
@@ -95,7 +95,7 @@ NSString* funcWithOCArg(NSString* str)
 {
 	NSString* text = @"CGPoint point = CGPointMake(2,3); return point;";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	CGPoint point = [result.value CGPointValue];
 	NSAssert(point.x == 2 && point.y == 3, nil);
@@ -105,7 +105,7 @@ NSString* funcWithOCArg(NSString* str)
 {
 	NSString* text = @"CGRect rect = CGRectMake(1,2,3,4); return rect;";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	CGRect rect = [result.value CGRectValue];
 	NSAssert(CGRectEqualToRect(rect, CGRectMake(1, 2, 3, 4)), nil);
@@ -115,7 +115,7 @@ NSString* funcWithOCArg(NSString* str)
 {
 	NSString* text = @"CGRect rect = CGRectZero(); return rect;";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	CGRect rect = [result.value CGRectValue];
 	NSAssert(CGRectEqualToRect(rect, CGRectZero), nil);
@@ -125,7 +125,7 @@ NSString* funcWithOCArg(NSString* str)
 {
 	NSString* text = @"CGSize size = CGSizeZero(); return size;";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	CGSize size = [result.value CGSizeValue];
 	NSAssert(CGSizeEqualToSize(size, CGSizeZero), nil);
@@ -135,7 +135,7 @@ NSString* funcWithOCArg(NSString* str)
 {
 	NSString* text = @"CGPoint point = CGPointZero(); return point;";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	CGPoint point = [result.value CGPointValue];
 	NSAssert(CGPointEqualToPoint(point, CGPointZero), nil);
@@ -145,7 +145,7 @@ NSString* funcWithOCArg(NSString* str)
 {
 	NSString* text = @"UIEdgeInsets inset = UIEdgeInsetsZero(); return inset;";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	UIEdgeInsets inset = [result.value UIEdgeInsetsValue];
 	NSAssert(UIEdgeInsetsEqualToEdgeInsets(inset, UIEdgeInsetsZero), nil);
@@ -163,7 +163,7 @@ NSString* funcWithOCArg(NSString* str)
 	return imp;";
 
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	IMP imp = [result.value pointerValue];
 	Method m = class_getInstanceMethod(NSObject.class, @selector(copy));
@@ -186,7 +186,6 @@ NSString* funcWithOCArg(NSString* str)
 	return didAdd;";
 
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
 	ASTVariable* result = [root execute];
 	NSAssert([result.value boolValue], nil);
 
@@ -203,8 +202,8 @@ NSString* funcWithOCArg(NSString* str)
 	NSString* key = @\"key\"; \
 	objc_setAssociatedObject(object, key, @\"1024\", 1);\
 	return objc_getAssociatedObject(object,key);";
+    
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
 	ASTVariable* result = [root execute];;
 
 	NSAssert([result.value isEqualToString:@"1024"], nil);
@@ -219,8 +218,8 @@ NSString* funcWithOCArg(NSString* str)
 	NSObject* key = [[NSObject alloc]init]; \
 	objc_setAssociatedObject(object, key, @\"1024\", 1);\
 	return objc_getAssociatedObject(object, key);";
+    
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
 	ASTVariable* result = [root execute];
 
 	NSAssert([result.value isEqualToString:@"1024"], nil);
@@ -235,8 +234,8 @@ NSString* funcWithOCArg(NSString* str)
 	UIView* view = [[UIView alloc]init]; \
 	objc_setAssociatedObject(object, view, @\"2048\", 1);\
 	return objc_getAssociatedObject(object,view);";
+    
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
 	ASTVariable* result = [root execute];
 
 	NSAssert([result.value isEqualToString:@"2048"], nil);
@@ -252,7 +251,7 @@ NSString* funcWithOCArg(NSString* str)
 	objc_setAssociatedObject(XCTestCase.class, key, @\"1024\", 1);\
 	return objc_getAssociatedObject(XCTestCase.class, key);";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 
 	NSAssert([result.value isEqualToString:@"1024"], nil);
@@ -268,7 +267,7 @@ NSString* funcWithOCArg(NSString* str)
 	objc_setAssociatedObject([XCTestCase class], key, @\"1024\", 1);\
 	return objc_getAssociatedObject([XCTestCase class], key);";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 
 	NSAssert([result.value isEqualToString:@"1024"], nil);
@@ -283,7 +282,7 @@ NSString* funcWithOCArg(NSString* str)
 //    });";
 //	static ASTNode* root;
 //	root = [ASTUtil parseString:text];
-//    [ASTUtil linkContextToRoot:root];
+//
 //    [root execute];
 //}
 

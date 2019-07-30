@@ -66,9 +66,7 @@
 	NSString* text = @"return [self frame].size.width;";
 
 	ASTNode* root = [ASTUtil parseString:text];
-	ASTContext* context = [ASTUtil linkContextToRoot:root];
-
-	[context pushDefinedContext:ctx];
+	[root.context pushDefinedContext:ctx];
 
 	ASTVariable* result = [root execute];
 
@@ -79,7 +77,7 @@
 {
 	NSString* text = @"return [CallOCFunctionTest echo];";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -88,7 +86,7 @@
 {
 	NSString* text = @"return [CallOCFunctionTest echoInteger:1024];";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -97,7 +95,7 @@
 {
 	NSString* text = @"return [CallOCFunctionTest echoFloat:6.666];";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert(fabs([result.value floatValue]-6.666) <= 0.001 , nil);
 }
@@ -106,7 +104,7 @@
 {
 	NSString* text = @"return [CallOCFunctionTest echoString:@\"DynamicOC!\"];";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([@"DynamicOC!" isEqualToString:result.value], nil);
 }
@@ -115,7 +113,7 @@
 {
 	NSString* text = @"return [CallOCFunctionTest echo:1.0 value2:2.0 value3:3.0];";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert(fabs([result.value floatValue]-6.0) <= 0.001, nil);
 }
@@ -124,7 +122,7 @@
 {
 	NSString* text = @"return [CallOCFunctionTest echo:1.0 :2.0 :3.0];";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert(fabs([result.value floatValue]-6.0) <= 0.001, nil);
 }
@@ -133,7 +131,7 @@
 {
 	NSString* text = @"NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:@(1024),@\"key1\",@(2),@\"key2\", nil]; return dict[@\"key1\"];";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -144,7 +142,7 @@
 	NSString *str2 = [str stringByAppendingFormat:@\"%@,%@\",@\"2\",@(4+5*2)];\
 	return str2;";
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
 	NSAssert([result.value isEqualToString:@"a2,14"], nil);
 }

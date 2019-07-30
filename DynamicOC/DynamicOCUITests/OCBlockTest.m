@@ -31,7 +31,7 @@
     return view.tag;";
     
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 1024, nil);
 }
@@ -48,7 +48,7 @@
     return result;";
     
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 666, nil);
 }
@@ -63,7 +63,7 @@
     return result;";
     
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == 8, nil);
 }
@@ -78,7 +78,7 @@
     return content;";
 
     ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	ASTVariable* result = [root execute];
     NSAssert([result.value[6] intValue] == 8, nil);
 }
@@ -88,7 +88,7 @@
 	NSString *text = @"^{};";
 
 	ASTNode* root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
+	
 	[root execute];
 }
 
@@ -104,7 +104,7 @@
 //    return result;";
 //
 //    ASTNode* root = [ASTUtil parseString:text];
-//    [ASTUtil linkContextToRoot:root];
+//    
 //    ASTVariable* result = [root execute];
 //    NSAssert([result.value doubleValue] == 1, nil);
 //}

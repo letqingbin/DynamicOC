@@ -38,7 +38,6 @@
     BOOL didAdd2 = class_addMethod([ViewController class], selector2,imp,@\"@@:@@\"); return didAdd2;";
 
     ASTNode* root = [ASTUtil parseString:text];
-    [ASTUtil linkContextToRoot:root];
     ASTVariable* result = [root execute];
 	[root.context clearAllContexts];
     NSAssert([result.value boolValue] == YES, nil);
@@ -57,7 +56,6 @@
 	";
 
 	root = [ASTUtil parseString:text];
-	[ASTUtil linkContextToRoot:root];
 	ASTVariable* varSelf = [[ASTVariable alloc]init];
 	varSelf.value = self;
 	varSelf.type  = ASTNodeTypeVariable;
