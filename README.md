@@ -2,7 +2,7 @@
 
 # DynamicOC
 A hotfix library based on flex/yacc. You can call any Objective-C class and method using DynamicOC.
-DynamicOC is functionally similar to [JSPath] (https://github.com/bang590/JSPatch), but it only needs to write native OC syntax to implement hotfix.
+DynamicOC is functionally similar to [JSPath](https://github.com/bang590/JSPatch), but it only needs to write native OC syntax to implement hotfix.
 
 ## Features
 
@@ -11,7 +11,7 @@ DynamicOC is functionally similar to [JSPath] (https://github.com/bang590/JSPatc
 - dynamically add property
 - dynamically replace method
 - dynamically add method
-- Complete and detailed unit test
+- Completed and detailed unit test
 -  powerful OC syntax parser based on flex/yacc
 - support CGRect/CGSize/CGPoint/NSRange/UIEdgeInsets/CGAffineTransform C-struct
 ...
@@ -25,7 +25,7 @@ NSString* text = @" \
 __block int result = 0;\
 UIView* view = [[UIView alloc]init];\
 void(^blk)(int value) = ^(int value){\
-view.tag = value;\
+    view.tag = value;\
 };\
 blk(1024);\
 return view.tag;";
@@ -40,7 +40,7 @@ NSAssert([result.value doubleValue] == 1024, nil);
 
 ```
 int echo(int value) {
-return value;
+    return value;
 }
 
 NSString* text = @" \
