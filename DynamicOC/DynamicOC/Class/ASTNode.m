@@ -20,7 +20,6 @@
 #import "ASTBlockNode.h"
 
 #import <objc/message.h>
-#import "ReactiveCocoa.h"
 
 @interface ASTNode()
 
@@ -613,9 +612,9 @@ break; \
 
 		case ASTNodeTypeOperationPostfixInc: {
 			// i++
-			@weakify(result)
+            __weak ASTVariable* weakResult = result;
 			result.postOperation = ^{
-				@strongify(result)
+                __strong ASTVariable* result = weakResult;
 
 				switch (ASTNodeTypeOperationPrefixInc) {
 						DC_CASE_UNARY(ASTNodeTypeOperationPrefixInc, 1+, result, NO)
@@ -629,9 +628,9 @@ break; \
 
 		case ASTNodeTypeOperationPostfixDec: {
 			// i--
-			@weakify(result)
+			__weak ASTVariable* weakResult = result;
 			result.postOperation = ^{
-				@strongify(result)
+				__strong ASTVariable* result = weakResult;
 
 				switch (ASTNodeTypeOperationPrefixDec) {
 						DC_CASE_UNARY(ASTNodeTypeOperationPrefixDec, 1-, result, YES)
