@@ -1,0 +1,191 @@
+%{
+    #import <Foundation/Foundation.h>
+    #import "ASTNode.h"
+	#import "ASTContext.h"
+
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+
+	#include "y.tab.h"
+
+	void count(void);
+	void comment(void);
+    int toInt(void);
+    double toDouble(void);
+    extern NSString* toString(const char* text);
+    extern NSString* toStringLiteral(const char* text);
+    
+	extern BOOL isKnownVariableName(NSString* key);
+%}
+
+D			[0-9]
+L			[a-zA-Z_]
+
+%%
+"/*"			{ comment(); }
+"//"[^\n]*      { /* consume //-comment */ }
+
+"YES"           { count(); yylval.t_int=1; return(OC_YES); }
+"NO"            { count(); yylval.t_int=0; return(OC_NO); }
+"true"          { count(); yylval.t_int=1; return(OC_YES); }
+"false"         { count(); yylval.t_int=0; return(OC_NO); }
+"nil"           { count(); return(OC_NIL); }
+"NULL"          { count(); return(OC_NIL); }
+"break"			{ count(); return(BREAK); }
+"continue"		{ count(); return(CONTINUE); }
+"else"			{ count(); return(ELSE); }
+"for"			{ count(); return(FOR); }
+"if"			{ count(); return(IF); }
+"return"		{ count(); return(RETURN); }
+"void"			{ count(); return(VOID); }
+"while"			{ count(); return(WHILE); }
+"do"			{ count(); return(DO); }
+"in"            { count(); return(IN); }
+"switch"        { count(); return(SWITCH); }
+"case"          { count(); return(CASE); }
+"default"       { count(); return(DEFAULT); }
+
+"unsigned"		{ count(); return(UNSIGNED); }
+"char" 			{ count(); return(CHAR); }
+"short" 		{ count(); return(SHORT); }
+"int"			{ count(); return(INT); }
+"long"			{ count(); return(LONG); }
+"float"         { count(); return(FLOAT); }
+"double"		{ count(); return(DOUBLE); }
+"BOOL"			{ count(); return(OC_BOOL); }
+"NSInteger"     { count(); return(LONG); }
+"NSUInteger"    { count(); return(NSUINTEGER); }
+
+"CGFloat"       {
+    count();
+#if CGFLOAT_IS_DOUBLE
+return(DOUBLE);
+#else
+return(FLOAT);
+#endif
+}
+
+"__block"       { count(); return(OC_BLOCK); }
+"_Nonnull"		{;}
+"_Nullable"		{;}
+
+{L}({L}|{D})* {
+	count();
+	NSString* title = toString(yytext);
+	yylval.t_string = title;
+
+	if(isKnownVariableName(title))
+	{
+		return(VARIABLE);
+	}
+
+	return(KEYWORD);
+}
+
+[1-9]{D}*   		{ count(); yylval.t_int = toInt(); return(CONSTANT_INT); }
+
+{D}+				 { count(); yylval.t_int = toInt(); return(CONSTANT_INT); }
+{D}*"."{D}+ 		 { count(); yylval.t_double = toDouble(); return(CONSTANT_DOUBLE); }
+{D}+"."{D}* 		 { count(); yylval.t_double = toDouble(); return(CONSTANT_DOUBLE); }
+
+@?\"(\\.|[^\\"\n])*\"	{
+    count();
+    NSString* val = toStringLiteral(yytext);
+    yylval.t_string = val;
+    return(STRING_LITERAL);
+}
+
+"+="			{ count(); return(ADD_ASSIGN); }
+"-="			{ count(); return(SUB_ASSIGN); }
+">>"			{ count(); return(OP_RIGHT_SHIFT); }
+"<<"			{ count(); return(OP_LEFT_SHIFT); }
+"++"			{ count(); return(OP_INC); }
+"--"			{ count(); return(OP_DEC); }
+"->"			{ count(); return(OP_PTR); }
+"&&"			{ count(); return(OP_AND); }
+"||"			{ count(); return(OP_OR); }
+"<="			{ count(); return(OP_LE); }
+">="			{ count(); return(OP_GE); }
+"=="			{ count(); return(OP_EQUAL); }
+"!="			{ count(); return(OP_NOTEQUAL); }
+";"				{ count(); return(';'); }
+"{"				{ count(); return('{'); }
+"}"				{ count(); return('}'); }
+","				{ count(); return(','); }
+":"				{ count(); return(':'); }
+"="				{ count(); return('='); }
+"("				{ count(); return('('); }
+")"				{ count(); return(')'); }
+"["				{ count(); return('['); }
+"]"				{ count(); return(']'); }
+"."				{ count(); return('.'); }
+"&"				{ count(); return('&'); }
+"!"				{ count(); return('!'); }
+"-"				{ count(); return('-'); }
+"+"				{ count(); return('+'); }
+"*"				{ count(); return('*'); }
+"/"				{ count(); return('/'); }
+"%"				{ count(); return('%'); }
+"<"				{ count(); return('<'); }
+">"				{ count(); return('>'); }
+"^"				{ count(); return('^'); }
+"|"				{ count(); return('|'); }
+"?"				{ count(); return('?'); }
+"@"             { count(); return('@'); }
+"@("            { count(); return(LEFT_PAREN);}
+"@{"            { count(); return(LEFT_BRACE);}
+"@["			{ count(); return(LEFT_SQUARE);}
+
+[ \t\r\n]*		{ count(); }
+.			    { ; }
+
+%%
+
+int yywrap(void)
+{
+	return 1;
+}
+
+void comment(void)
+{
+	char c, prev = 0;
+
+	while ((c = input()) != 0)      /* (EOF maps to 0) */
+	{
+		if (c == '/' && prev == '*')
+		return;
+		prev = c;
+	}
+}
+
+int column = 0;
+
+void count(void)
+{
+	int i;
+
+	for (i = 0; yytext[i] != '\0'; i++)
+	if (yytext[i] == '\n')
+	column = 0;
+	else if (yytext[i] == '\t')
+	column += 8 - (column % 8);
+	else
+	column++;
+
+	ECHO;
+}
+
+int toInt()
+{
+    int result = (int)strtol(yytext, NULL, 10);
+    return result;
+}
+
+double toDouble()
+{
+    double result = atof(yytext);
+    return result;
+}
+
+

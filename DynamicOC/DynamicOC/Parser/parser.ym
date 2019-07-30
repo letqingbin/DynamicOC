@@ -1,0 +1,1512 @@
+%{
+	#import <Foundation/Foundation.h>
+
+	#import "ASTUtil.h"
+	#import "ASTHeader.h"
+    #import "ASTContext.h"
+    
+	#import "ASTNode.h"
+	#import "ASTPropertyNode.h"
+	#import "ASTMethodNode.h"
+    #import "ASTBlockNode.h"
+
+	#include <stdio.h>
+	#include <stdlib.h>
+
+	#define YYDEBUG 0
+
+	extern void yyerror(const char *);
+	extern int yylex(void);
+	extern int yyparse(void);
+
+	void parseNode(ASTNode* root);
+
+	static NSMutableArray* gblNodeLists = nil;
+	void ASTRetainNode(ASTNode* node);
+	void ASTReleaseNodes(void);
+    
+	extern NSMutableDictionary* gblVariables;
+	BOOL isKnownVariableName(NSString* key);
+	void registerVariableNode(ASTNode *node);
+    
+    NSString* toString(const char* text);
+    NSString* toStringLiteral(const char* text);
+%}
+
+%union
+{
+	int t_int;
+	float t_float;
+	double t_double;
+	__unsafe_unretained NSString* t_string;
+	__unsafe_unretained id t_id;
+}
+
+%nonassoc LOWER_THAN_ELSE
+%nonassoc ELSE
+
+%left OP_GE OP_LE OP_EQUAL OP_NOTEQUAL '>' '<'
+%left OP_LEFT_SHIFT OP_RIGHT_SHIFT
+%left '+' '-'
+%left '*' '/' '%'
+%right '!' '&'
+%nonassoc UMINUS
+%nonassoc OP_INC OP_DEC '.' OP_PTR
+
+
+%token<t_string> KEYWORD VARIABLE STRING_LITERAL
+
+%token<t_int> OP_PTR OP_INC OP_DEC OP_LEFT_SHIFT OP_RIGHT_SHIFT OP_LE OP_GE OP_EQUAL OP_NOTEQUAL
+%token<t_int> OP_AND OP_OR
+%token<t_int> SUB_ASSIGN ADD_ASSIGN
+%token<t_int> LEFT_PAREN LEFT_BRACE LEFT_SQUARE
+
+%token<t_int> UNSIGNED NSUINTEGER
+%token<t_int> CHAR SHORT INT LONG FLOAT DOUBLE VOID
+%token<t_int> OC_BOOL OC_BLOCK
+
+%token<t_int> IF ELSE WHILE FOR CONTINUE BREAK RETURN IN DO
+%token<t_int> SWITCH CASE DEFAULT
+
+%token<t_int> OC_YES OC_NO OC_NIL
+
+%token<t_int> CONSTANT_INT;
+%token<t_double> CONSTANT_DOUBLE;
+
+%type<t_id> program;
+%type<t_id> constant;
+
+%type<t_id> postfix_expression;
+%type<t_id> basic_expression;
+%type<t_id> conditional_expression;
+%type<t_id> logical_or_expression;
+%type<t_id> logical_and_expression;
+%type<t_id> inclusive_or_expression;
+%type<t_id> exclusive_or_expression;
+%type<t_id> and_expression;
+%type<t_id> equality_expression;
+%type<t_id> relational_expression;
+%type<t_id> shift_expression;
+%type<t_id> additive_expression;
+%type<t_id> multiplicative_expression;
+%type<t_id> unary_expression;
+%type<t_id> assignment_expression;
+%type<t_id> primary_expression;
+%type<t_id> optional_argument_list;
+%type<t_id> argument_list;
+%type<t_id> argument;
+%type<t_id> statement;
+%type<t_id> statement_list;
+
+%type<t_id> oc_argument;
+%type<t_id> oc_argument_list;
+%type<t_id> unary_selector;
+%type<t_id> oc_invoke_objc;
+%type<t_id> oc_property_expression;
+%type<t_id> oc_array_expression;
+%type<t_id> oc_dictionary_expression;
+
+%type<t_id> type_specifier;
+%type<t_id> type_specifier_list;
+%type<t_id> pointer;
+%type<t_id> type_declarator_expression;
+
+%type<t_id> labeled_statement;
+%type<t_id> selection_statement;
+%type<t_id> jump_statement;
+%type<t_id> iteration_statement;
+%type<t_id> compound_statement;
+
+%type<t_id> expression;
+%type<t_id> expression_statement;
+
+%type<t_id> block_declarator_expression;
+%type<t_id> block_declarator_argument_list;
+%type<t_id> block_statement;
+%type<t_id> block_argument_list;
+%type<t_id> optional_block_argument_list;
+
+%start program;
+
+%%
+
+program
+: statement_list {
+	$$ = $1;
+	parseNode($1);
+	ASTReleaseNodes();
+}
+;
+
+statement_list:
+statement_list statement {
+	ASTNode* node = $1;
+    
+    id nilobj = [ASTUtil placeholder_node];
+        
+    if($2 == nil)
+    {
+        $2 = nilobj;
+    }
+    
+    [node addChild:$2];
+	
+	$$ = node;
+}
+| {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeProgram];
+	$$ = node;
+
+	ASTRetainNode(node);
+}
+;
+
+statement:
+expression_statement             { $$ = $1; }
+| type_declarator_expression ';' {
+	$$ = $1;
+	registerVariableNode($1);
+}
+| block_declarator_expression ';' {
+    $$ = $1;
+    registerVariableNode($1);
+}
+| selection_statement            { $$ = $1; }
+| compound_statement			 { $$ = $1; }
+| labeled_statement              { $$ = $1; }
+| jump_statement                 { $$ = $1; }
+| iteration_statement            { $$ = $1; }
+| block_statement                { $$ = $1; }
+;
+
+compound_statement:
+'{' statement_list '}' {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeScope];
+	[node addChild:$2];
+	$$ = node;
+
+	ASTRetainNode(node);
+}
+;
+
+primary_expression:
+VARIABLE {
+	//self/super/variable
+    ASTNode* node = [ASTUtil variable_node:$1];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| constant {
+    $$ = $1;
+}
+| '(' expression ')' {
+    $$ = $2;
+}
+;
+
+constant:
+CONSTANT_INT {
+    ASTNode* node = [ASTUtil int_node:$1];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| CONSTANT_DOUBLE {
+    ASTNode* node = [ASTUtil double_node:$1];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| STRING_LITERAL {
+    ASTNode* node = [ASTUtil string_node:$1];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| OC_YES {
+    ASTNode* node = [ASTUtil bool_node:$1];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| OC_NO {
+    ASTNode* node = [ASTUtil bool_node:$1];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| OC_NIL {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeNil];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| '@' CONSTANT_INT {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeNumber];
+    ASTNode* intNode = [ASTUtil int_node:$2];
+    node.value = intNode;
+    $$ = node;
+    ASTRetainNode(node);
+}
+| '@' CONSTANT_DOUBLE {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeNumber];
+    ASTNode* doubleNode = [ASTUtil double_node:$2];
+    node.value = doubleNode;
+    $$ = node;
+    ASTRetainNode(node);
+}
+;
+
+
+postfix_expression:
+primary_expression  {
+    $$ = $1;
+}
+| postfix_expression '[' expression ']' {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeIndex];
+    [node addChild:$1];     //container
+    [node addChild:$3];     //expr/index
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| postfix_expression '(' optional_argument_list ')' {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeCallCFunction];
+    node.value = $1;
+    
+    [node addChild:$3];     //args
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| type_specifier_list '(' optional_argument_list ')' {
+    
+    ASTNode* keywordNode = $1;
+    assert(keywordNode.type == ASTNodeTypeKEYWORD);
+    
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeCallCFunction];
+    node.value = keywordNode.keyword;
+    
+    [node addChild:$3];     //args
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| '[' oc_invoke_objc unary_selector ']'    {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeCallOCFunction];
+    [node addChild:$2];     //expr
+    [node addChild:$3];     //args
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| '[' oc_invoke_objc oc_argument_list ']' {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeCallOCFunction];
+    [node addChild:$2];     //expr
+    [node addChild:$3];     //args
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| oc_property_expression {
+    $$ = $1;
+}
+| LEFT_PAREN assignment_expression ')' {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeNumber];
+	node.value = $2;
+	$$ = node;
+	ASTRetainNode(node);
+}
+| LEFT_BRACE oc_dictionary_expression '}' {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeDictionary];
+	[node addChild:$2];
+	$$ = node;
+	ASTRetainNode(node);
+}
+| LEFT_SQUARE oc_array_expression ']' {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeArray];
+	[node addChild:$2];
+	$$ = node;
+	ASTRetainNode(node);
+}
+;
+
+oc_dictionary_expression:
+postfix_expression ':' postfix_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeContainer];
+    ASTNode* keyValueNode = [ASTUtil op_node:ASTNodeTypeKeyValue];
+    [keyValueNode addChild:$1]; //key
+    [keyValueNode addChild:$3]; //value
+    [node addChild:keyValueNode];
+    
+    $$ = node;
+    ASTRetainNode(node);
+}
+| oc_dictionary_expression ',' postfix_expression ':' postfix_expression {
+    ASTNode* node = $1;
+    ASTNode* keyValueNode = [ASTUtil op_node:ASTNodeTypeKeyValue];
+    [keyValueNode addChild:$3]; //key
+    [keyValueNode addChild:$5]; //value
+    [node addChild:keyValueNode];
+}
+;
+
+oc_array_expression:
+postfix_expression {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeContainer];
+	[node addChild:$1];
+
+	$$ = node;
+	ASTRetainNode(node);
+}
+| oc_array_expression ',' postfix_expression {
+	ASTNode* node = $1;
+	[node addChild:$3];
+
+	$$ = node;
+}
+| {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeContainer];
+	$$ = node;
+	ASTRetainNode(node);
+}
+;
+
+oc_property_expression:
+KEYWORD '.' KEYWORD {
+	ASTPropertyNode* nodeList = [[ASTPropertyNode alloc]init];
+	nodeList.type = ASTNodeTypePropertyList;
+
+	ASTPropertyNode* node = [ASTUtil property_node];
+	node.invoker  = [ASTUtil keyword_node:$1];
+	node.selector = $3;
+
+	[nodeList addChild:node];
+
+	$$ = nodeList;
+
+	ASTRetainNode(nodeList);
+}
+| postfix_expression '.' KEYWORD {
+	ASTNode* invoker = $1;
+	if(invoker.type == ASTNodeTypePropertyList)
+	{
+		ASTPropertyNode* node = [ASTUtil property_node];
+        node.selector = $3;
+
+		[invoker addChild:node];
+	}
+	else
+	{
+		ASTPropertyNode* nodeList = [[ASTPropertyNode alloc]init];
+		nodeList.type = ASTNodeTypePropertyList;
+
+		ASTPropertyNode* node = [ASTUtil property_node];
+		node.invoker = $1;
+        node.selector = $3;
+
+		[nodeList addChild:node];
+
+		$$ = nodeList;
+
+		ASTRetainNode(nodeList);
+	}
+}
+| postfix_expression OP_PTR KEYWORD {
+	ASTPropertyNode* node = [[ASTPropertyNode alloc]init];
+	node.type = ASTNodeTypeMemberVariables;
+	node.invoker  = $1;
+    node.selector = $3;
+
+	$$ = node;
+
+	ASTRetainNode(node);
+}
+;
+
+optional_argument_list:
+argument_list {
+    $$ = $1;
+}
+|  {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeCArugmentList];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| VOID {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeVoid];
+	$$ = node;
+	ASTRetainNode(node);
+}
+;
+
+argument_list:
+argument {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeCArugmentList];
+    [node addChild:$1];
+    
+    $$ = node;
+    ASTRetainNode(node);
+}
+| argument_list ',' argument {
+    ASTNode* node = $1;
+    [node addChild:$3];
+    
+    $$ = $1;
+}
+;
+
+argument:
+assignment_expression { $$ = $1; }
+| block_statement     { $$ = $1; }
+;
+
+unary_expression:
+postfix_expression {
+    $$ = $1;
+}
+| OP_DEC unary_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationPrefixDec];
+    [node addChild:$2];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| OP_INC unary_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationPrefixInc];
+    [node addChild:$2];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| unary_expression OP_INC {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationPostfixInc];
+    [node addChild:$1];
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| unary_expression OP_DEC {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationPostfixDec];
+    [node addChild:$1];
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| '+' unary_expression  %prec UMINUS {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnaryPlus];
+    [node addChild:$2];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| '-' unary_expression  %prec UMINUS {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnaryMinus];
+    [node addChild:$2];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| '!' unary_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnaryNot];
+    [node addChild:$2];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+
+basic_expression:
+conditional_expression { $$ = $1; }
+;
+
+conditional_expression
+: logical_or_expression { $$ = $1; }
+| logical_or_expression '?' expression ':' conditional_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationCondition];
+    
+    id nilobj = [ASTUtil placeholder_node];
+    
+    if($1 == nil)
+    {
+        $1 = nilobj;
+    }
+    
+    if($3 == nil)
+    {
+        $3 = nilobj;
+    }
+    
+    if($5 == nil)
+    {
+        $5 = nilobj;
+    }
+    
+    [node addChild:$1];
+    [node addChild:$3];
+    [node addChild:$5];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+logical_or_expression:
+logical_and_expression { $$ = $1; }
+| logical_or_expression OP_OR logical_and_expression {
+    
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationOR];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+logical_and_expression:
+inclusive_or_expression { $$ = $1; }
+| logical_and_expression OP_AND inclusive_or_expression {
+    
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationAND];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+inclusive_or_expression:
+exclusive_or_expression { $$ = $1; }
+| inclusive_or_expression '|' exclusive_or_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationBitOR];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+exclusive_or_expression:
+and_expression { $$ = $1; }
+| exclusive_or_expression '^' and_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationBitNOT];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+and_expression:
+equality_expression { $$ = $1; }
+| and_expression '&' equality_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationBitAND];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+equality_expression:
+relational_expression { $$ = $1; }
+| equality_expression OP_EQUAL relational_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeEqual];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| equality_expression OP_NOTEQUAL relational_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeNotEqual];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+relational_expression:
+shift_expression { $$ = $1; }
+| relational_expression '<' shift_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeLessThan];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| relational_expression '>' shift_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeGreaterThan];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| relational_expression OP_LE shift_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeLessEqual];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| relational_expression OP_GE shift_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeGreaterEqual];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+shift_expression:
+additive_expression { $$ = $1; }
+| shift_expression OP_LEFT_SHIFT additive_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationLeftShitf];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| shift_expression OP_RIGHT_SHIFT additive_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationRightShitf];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+additive_expression:
+multiplicative_expression { $$ = $1; }
+| additive_expression '+' multiplicative_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationADD];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| additive_expression '-' multiplicative_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationSUB];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+multiplicative_expression:
+unary_expression {
+    $$ = $1;
+}
+| multiplicative_expression '*'  unary_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationMUL];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| multiplicative_expression '/'  unary_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationDIV];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| multiplicative_expression '%'  unary_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOperationRemainder];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+assignment_expression:
+basic_expression { $$ = $1; }
+| type_declarator_expression '=' assignment_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeAssign];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+
+	registerVariableNode($1);
+}
+| block_declarator_expression '=' block_statement {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeAssign];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+    
+    registerVariableNode($1);
+}
+| pointer VARIABLE '=' assignment_expression {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeAssign];
+
+	ASTNode* addressNode = [ASTUtil op_node:ASTNodeTypeAddressAssign];
+	ASTNode* varNode = [ASTUtil variable_node:$2];
+	varNode.hasPointer = YES;
+	[addressNode addChild:varNode];
+
+	[node addChild:addressNode];
+	[node addChild:$4];
+
+	$$ = node;
+
+	ASTRetainNode(node);
+}
+| unary_expression '=' assignment_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeAssign];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| unary_expression ADD_ASSIGN assignment_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeAddAssign];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| unary_expression SUB_ASSIGN assignment_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeSubAssign];
+    [node addChild:$1];
+    [node addChild:$3];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+expression:
+assignment_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeExpression];
+    [node addChild:$1];
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| expression ',' assignment_expression {
+    ASTNode* node = $1;
+    [node addChild:$3];
+    $$ = node;
+}
+;
+
+oc_argument:
+':' expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOCArgument];
+    $$ = node;
+
+	ASTMethodNode* methodNode = [[ASTMethodNode alloc]init];
+	methodNode.name = @"";
+	methodNode.argument = $2;
+	node.value = methodNode;
+
+    ASTRetainNode(node);
+}
+| ':' block_statement {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOCArgument];
+    $$ = node;
+    
+    ASTMethodNode* methodNode = [[ASTMethodNode alloc]init];
+    methodNode.name = @"";
+    methodNode.argument = $2;
+    node.value = methodNode;
+    
+    ASTRetainNode(node);
+}
+| KEYWORD ':' expression    {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOCArgument];
+    $$ = node;
+
+	ASTMethodNode* methodNode = [[ASTMethodNode alloc]init];
+	methodNode.name = $1;
+	methodNode.argument = $3;
+	node.value = methodNode;
+
+    ASTRetainNode(node);
+}
+| KEYWORD ':' block_statement {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOCArgument];
+    $$ = node;
+    
+    ASTMethodNode* methodNode = [[ASTMethodNode alloc]init];
+    methodNode.name = $1;
+    methodNode.argument = $3;
+    node.value = methodNode;
+    
+    ASTRetainNode(node);
+}
+;
+
+oc_argument_list:
+oc_argument {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeOCArgumentList];
+    [node addChild:$1];
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| oc_argument_list oc_argument {
+    ASTNode* node = $1;
+    [node addChild:$2];
+    
+    $$ = $1;
+}
+;
+
+unary_selector:
+KEYWORD {
+    ASTNode* node = [ASTUtil unarySelector_node:$1];
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+oc_invoke_objc:
+KEYWORD {
+    ASTNode* node = [ASTUtil keyword_node:$1];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| postfix_expression {
+    $$ = $1;
+}
+;
+
+type_specifier_list:
+type_specifier {
+    $$ = $1;
+}
+| type_specifier pointer {
+    ASTNode* node = $1;
+	node.hasPointer = YES;
+	
+    [node addChild:$2];
+    
+    $$ = node;
+}
+| OC_BLOCK type_specifier {
+    ASTNode* node = $2;
+    node.hasBlock = YES;
+    
+    $$ = node;
+}
+| OC_BLOCK type_specifier pointer {
+    ASTNode* node = $2;
+    node.hasBlock = YES;
+    node.hasPointer = YES;
+
+    $$ = node;
+}
+;
+
+
+type_specifier:
+CHAR {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeChar];
+	$$ = node;
+	ASTRetainNode(node);
+}
+| UNSIGNED CHAR {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedChar];
+	$$ = node;
+	ASTRetainNode(node);
+}
+| SHORT {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeShort];
+	$$ = node;
+	ASTRetainNode(node);
+}
+| UNSIGNED SHORT {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedShort];
+	$$ = node;
+	ASTRetainNode(node);
+}
+| INT {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeInt];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| UNSIGNED INT {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedInt];
+	$$ = node;
+	ASTRetainNode(node);
+}
+| LONG {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeLong];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| UNSIGNED LONG {
+	ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedLong];
+	$$ = node;
+	ASTRetainNode(node);
+}
+| NSUINTEGER {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedLong];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| FLOAT {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeFloat];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| DOUBLE {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeDouble];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| OC_BOOL {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeBOOL];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| VOID {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeVoid];
+    $$ = node;
+    ASTRetainNode(node);
+}
+| KEYWORD {
+    ASTNode* node = [ASTUtil keyword_node:$1];
+    $$ = node;
+    ASTRetainNode(node);
+}
+;
+
+pointer:
+'*' {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypePointer];
+	node.hasPointer = YES;
+    $$ = node;
+    ASTRetainNode(node);
+}
+| pointer '*' {
+    ASTNode* node = $1;
+    ASTNode* pointer = [ASTUtil op_node:ASTNodeTypePointer];
+	pointer.hasPointer = YES;
+    [node addChild:pointer];
+    
+    $$ = $1;
+}
+;
+
+type_declarator_expression:
+type_specifier_list KEYWORD {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeDeclarator];
+    
+    [node addChild:$1];
+    
+    ASTNode* varNode = [ASTUtil variable_node:$2];
+    [node addChild:varNode];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+expression_statement:
+';' { $$ = NULL; }
+| expression ';' {
+    $$ = $1;
+}
+;
+
+labeled_statement:
+CASE conditional_expression ':' statement {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeCase];
+    [node addChild:$2];    //expression
+
+	id nilObj = [ASTUtil placeholder_node];
+	if($4 == nil)
+	{
+		$4 = nilObj;
+	}
+
+    [node addChild:$4];    //statement
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| DEFAULT ':' statement {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeDefault];
+
+	id nilObj = [ASTUtil placeholder_node];
+
+	if($3 == nil)
+	{
+		$3 = nilObj;
+	}
+
+    [node addChild:$3];    //statement
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+selection_statement:
+IF '(' expression ')' statement %prec LOWER_THAN_ELSE {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeIf];
+    [node addChild:$3];    //expression
+
+	id nilObj = [ASTUtil placeholder_node];
+	if($5 == nil)
+	{
+		$5 = nilObj;
+	}
+
+    [node addChild:$5];    //if statement
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| IF '(' expression ')' statement ELSE statement {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeIf];
+    [node addChild:$3];    //expression
+
+	id nilObj = [ASTUtil placeholder_node];
+
+	if($5 == nil)
+	{
+		$5 = nilObj;
+	}
+
+    [node addChild:$5];    //if statement
+    
+    ASTNode* elseNode = [ASTUtil op_node:ASTNodeTypeElse];
+
+	if($7 == nil)
+	{
+		$7 = nilObj;
+	}
+
+    [elseNode addChild:$7];
+    [node addChild:elseNode];    //else statement
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| SWITCH '(' expression ')' statement {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeSwitch];
+
+	id nilObj = [ASTUtil placeholder_node];
+
+	if($3 == nil)
+	{
+		$3 = nilObj;
+	}
+
+	if($5 == nil)
+	{
+		$5 = nilObj;
+	}
+
+    [node addChild:$3];    //expression
+    [node addChild:$5];    //statement
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+iteration_statement
+: WHILE '(' expression ')' statement {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeWhile];
+    [node addChild:$3];    //expression
+
+	id nilObj = [ASTUtil placeholder_node];
+	if($5 == nil)
+	{
+        $5 = nilObj;    //statement
+	}
+
+    [node addChild:$5];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| DO statement WHILE '(' expression ')' ';' {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeDoWhile];
+    [node addChild:$5];    //expression
+    $$ = node;
+
+	id nilObj = [ASTUtil placeholder_node];
+	if($2 == nil)
+	{
+        $2 = nilObj;    //statement
+	}
+    
+    [node addChild:$2];
+
+    ASTRetainNode(node);
+}
+| FOR '(' expression_statement expression_statement ')' statement {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeFor];
+
+	id nilObj = [ASTUtil placeholder_node];
+	if($3 == nil)
+	{
+        $3 = nilObj;    //expression
+	}
+
+	if($4 == nil)
+	{
+		$4 = nilObj;    //expression
+	}
+    
+	if($6 == nil)
+	{
+		$6 = nilObj;    //statement
+	}
+    
+    [node addChild:$3];
+    [node addChild:$4];
+	[node addChild:nilObj];
+    [node addChild:$6];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| FOR '(' expression_statement expression_statement expression ')' statement {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeFor];
+
+	id nilObj = [ASTUtil placeholder_node];
+	if($3 == nil)
+	{
+		$3 = nilObj;    //expression
+	}
+
+	if($4 == nil)
+	{
+		$4 = nilObj;    //expression
+	}
+
+	if($5 == nil)
+	{
+		$5 = nilObj;    //expression
+	}
+
+	if($7 == nil)
+	{
+		$7 = nilObj;    //statement
+	}
+
+    [node addChild:$3];
+    [node addChild:$4];
+    [node addChild:$5];
+    [node addChild:$7];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+
+jump_statement:
+RETURN ';' {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeReturn];
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| RETURN expression ';' {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeReturn];
+    node.value = $2;
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| BREAK ';' {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeBreak];
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| CONTINUE ';' {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeContinue];
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+block_declarator_argument_list:
+type_specifier_list KEYWORD {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeBlockDeclareArugmentList];
+    [node addChild:$1];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| type_specifier_list {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeBlockDeclareArugmentList];
+    [node addChild:$1];
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| block_declarator_argument_list ',' type_specifier_list KEYWORD {
+    ASTNode* node = $1;
+    [node addChild:$3];
+    
+    $$ = node;
+}
+| block_declarator_argument_list ',' type_specifier_list {
+    ASTNode* node = $1;
+    [node addChild:$3];
+    
+    $$ = node;
+}
+|  {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeBlockArugmentList];
+    $$ = node;
+    ASTRetainNode(node);
+}
+;
+
+block_declarator_expression:
+type_specifier_list '(' '^' KEYWORD ')' '(' block_declarator_argument_list ')'  {
+    ASTBlockNode* node = [[ASTBlockNode alloc]init];
+    node.type = ASTNodeTypeBlockDeclarator;
+    
+    [node addChild:$1];
+    
+    ASTNode* varNode = [ASTUtil variable_node:$4];
+    [node addChild:varNode];
+    [node addChild:$7];
+    
+    $$ = node;
+    ASTRetainNode(node);
+}
+;
+
+block_argument_list:
+type_declarator_expression {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeBlockArugmentList];
+    [node addChild:$1];
+    $$ = node;
+    ASTRetainNode(node);
+    
+    registerVariableNode($1);
+}
+| block_argument_list ',' type_declarator_expression {
+    ASTNode* node = $1;
+    [node addChild:$3];
+    
+    $$ = $1;
+    
+    registerVariableNode($3);
+}
+;
+
+optional_block_argument_list:
+block_argument_list {
+    $$ = $1;
+}
+| VOID {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeBlockArugmentList];
+    ASTNode* voidNode = [ASTUtil op_node:ASTNodeTypeVoid];
+    [node addChild:voidNode];
+    
+    $$ = node;
+    ASTRetainNode(node);
+}
+|  {
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeBlockArugmentList];
+    $$ = node;
+    ASTRetainNode(node);
+}
+;
+
+block_statement:
+'^' '{' statement_list '}' {
+    ASTBlockNode* node = [[ASTBlockNode alloc]init];
+    node.type = ASTNodeTypeBlock;
+    
+    ASTNode* nodeScope = [ASTUtil op_node:ASTNodeTypeScope];
+    
+    ASTNode* voidNode = [ASTUtil op_node:ASTNodeTypeVoid];
+    ASTNode* arugmentNode = [ASTUtil op_node:ASTNodeTypeBlockArugmentList];
+    
+    [node addChild:voidNode];
+    [node addChild:arugmentNode];
+    [nodeScope addChild:$3];
+    [node addChild:nodeScope];
+    
+    $$ = node;
+    ASTRetainNode(node);
+}
+| '^' '(' optional_block_argument_list ')' '{' statement_list '}' {
+    ASTBlockNode* node = [[ASTBlockNode alloc]init];
+    node.type = ASTNodeTypeBlock;
+    
+    ASTNode* nodeScope = [ASTUtil op_node:ASTNodeTypeScope];
+    
+    ASTNode* voidNode = [ASTUtil op_node:ASTNodeTypeVoid];
+   
+    [node addChild:voidNode];
+    [node addChild:$3];
+    [nodeScope addChild:$6];
+    [node addChild:nodeScope];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+| '^' type_specifier_list '(' optional_block_argument_list ')' '{' statement_list '}' {
+    ASTBlockNode* node = [[ASTBlockNode alloc]init];
+    node.type = ASTNodeTypeBlock;
+    
+    ASTNode* nodeScope = [ASTUtil op_node:ASTNodeTypeScope];    
+    [node addChild:$2];
+    [node addChild:$4];
+    [nodeScope addChild:$7];
+    
+    [node addChild:nodeScope];
+    $$ = node;
+    
+    ASTRetainNode(node);
+}
+;
+
+
+%%
+
+extern int column;
+
+void yyerror(const char *s)
+{
+	fflush(stdout);
+	printf("\n%*s\n%*s\n", column, "^", column, s);
+
+	column = 0;
+}
+
+void ASTRetainNode(ASTNode* node)
+{
+	if(!gblNodeLists)
+	{
+		gblNodeLists = [NSMutableArray array];
+	}
+
+	if(![gblNodeLists containsObject:node])
+	{
+		[gblNodeLists addObject:node];
+	}
+}
+
+void ASTReleaseNodes(void)
+{
+	[gblNodeLists removeAllObjects];
+	[gblVariables removeAllObjects];
+}
+
+BOOL isKnownVariableName(NSString* key)
+{
+	if(!gblVariables)
+	{
+		gblVariables = [NSMutableDictionary dictionary];
+	}
+
+	return [gblVariables valueForKey:key] != nil;
+}
+
+void registerVariableNode(ASTNode *node)
+{
+	if(node.type == ASTNodeTypeDeclarator
+    || node.type == ASTNodeTypeBlockDeclarator)
+	{
+		ASTNode* var = node.allChilds[1];
+		NSString* key = var.value;
+
+		[ASTUtil registerVariableForYacc:key];
+	}
+}
+
+NSString* toString(const char* text)
+{
+    return [NSString stringWithCString:text];
+}
+
+NSString* toStringLiteral(const char* text)
+{
+    static id stringCache = nil;
+    stringCache = nil;
+    
+    NSString* str = toString(text);
+    int start = 1;
+    if([[str substringToIndex:1] isEqualToString:@"@"])
+    {
+        //start with @"
+        start++;
+    }
+
+    str = [str substringFromIndex:start];
+    str = [str substringToIndex:str.length-1];
+    
+    stringCache = str;
+    return str;
+}
+
+void parseNode(ASTNode* root)
+{
+	gblRootNode = root;
+}
+
