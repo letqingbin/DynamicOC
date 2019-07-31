@@ -1,4 +1,4 @@
-[中文介绍](https://github.com/dKingbin/DynamicOC/blob/master/README-chs.md)
+[中文介绍](https://github.com/dKingbin/DynamicOC/blob/master/README-chs.md) | [原理介绍](https://github.com/dKingbin/DynamicOC/blob/master/principle_chs.md)
 
 # DynamicOC
 A hotfix library based on flex/yacc. You can call any Objective-C class and method using DynamicOC.

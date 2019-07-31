@@ -1,5 +1,5 @@
 
-[English README](https://github.com/dKingbin/DynamicOC/blob/master/README.md)   
+[English README](https://github.com/dKingbin/DynamicOC/blob/master/README.md)  | [原理介绍](https://github.com/dKingbin/DynamicOC/blob/master/principle_chs.md)
 
 # DynamicOC
 DynamicOC是一个功能上与[JSPath](https://github.com/bang590/JSPatch)类似，但是仅需要编写原生OC语法就能实现热更新(hotfix)的功能。
