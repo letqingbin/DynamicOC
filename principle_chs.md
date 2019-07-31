@@ -2,7 +2,7 @@
 
 ### 前言
 
-iOS热修复方案经过JSPatch事件后，也消停了很久。bang神在[JSPatch – 动态更新iOS APP](http://blog.cnbang.net/works/2767/)中曾提到，为了更符合Apple的规则，即[Apple Developer Program License Agreement ](http://dev.hel.fi/paatokset/media/att/9a/9aa5692b91f2b538eeb352c425b3e66c09e6b1a5.pdf)里3.3.2提到的不可动态下发可执行代码。
+iOS热修复方案经过JSPatch事件后，也消停了很久。bang神在[《JSPatch – 动态更新iOS APP》](http://blog.cnbang.net/works/2767/)中曾提到，为了更符合Apple的规则，即[《Apple Developer Program License Agreement》 ](http://dev.hel.fi/paatokset/media/att/9a/9aa5692b91f2b538eeb352c425b3e66c09e6b1a5.pdf)里3.3.2提到的不可动态下发可执行代码。
 JSPatch特地绕了js的圈子，从而实现曲线救国、实现热更新的方案。但是事实证明了Apple对于这种方案也是不认可的，根本的原因还是在于JSPath做得太过极致--支持绝大部分的OC/C语法。
 
 ### 思考
@@ -19,6 +19,7 @@ C语言是没有反射机制的，作为一门编译型语言，在编译期间�
 - dlsym, 根据动态链接库操作句柄与符号，返回符号对应的地址。
 
 第二种是目前JSPatch采用的办法，当然也被Apple警告了。dlsym功能非常强悍，是获取函数指针的最优解。
+
 第一种局限性非常大，但是也是最安全的方法，应该也是能被苹果所接受的一种方法。为什么这么说呢？
 我们所追求的是能够动态运行所有的OC语法，加上部分C函数。因此在映射表中，只需要加上下面runtime常用的C函数映射，
 我们就能够动态运行所有的OC语言。然后再自定义需要用到的C函数，基本上能够满足绝大部分热更新的需要，同时也能够被苹果所接受。
@@ -133,10 +134,12 @@ NSAssert([result.value doubleValue] == 1024, nil);
 
 
 ## 参考链接
-
 [JSPatch – 动态更新iOS APP](http://blog.cnbang.net/works/2767/)
+
 [iOS 动态化的故事](http://blog.cnbang.net/tech/3286/)
+
 [Apple Developer Program License Agreement ](http://dev.hel.fi/paatokset/media/att/9a/9aa5692b91f2b538eeb352c425b3e66c09e6b1a5.pdf)
+
 [滴滴 iOS 动态化方案 DynamicCocoa 的诞生与起航](http://www.cocoachina.com/articles/18400)
 
 
