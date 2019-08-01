@@ -4,6 +4,12 @@
 A hotfix library based on flex/yacc. You can call any Objective-C class and method using DynamicOC.
 DynamicOC is functionally similar to [JSPath](https://github.com/bang590/JSPatch), but it only needs to write native OC syntax to implement hotfix.
 
+### Warnning
+
+```
+Purely technology sharing, DO NOT Sheld to appstore! 
+```
+
 ## Features
 
 - dynamically execute Objective-C code

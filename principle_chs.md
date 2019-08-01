@@ -1,4 +1,9 @@
 # iOS 动态化热修复方案
+### Warnning
+
+```
+纯粹是技术分享，不要用于上架操作！
+```
 
 ### 前言
 
@@ -19,18 +24,7 @@ C语言是没有反射机制的，作为一门编译型语言，在编译期间�
 - dlsym, 根据动态链接库操作句柄与符号，返回符号对应的地址。
 
 第二种是目前JSPatch采用的办法，当然也被Apple警告了。dlsym功能非常强悍，是获取函数指针的最优解。
-第一种局限性非常大，但是也是最安全的方法，应该也是能被苹果所接受的一种方法。为什么这么说呢？
-我们所追求的是能够动态运行所有的OC语法，加上部分C函数。因此在映射表中，只需要加上下面runtime常用的C函数映射，
-我们就能够动态运行所有的OC语言。然后再自定义需要用到的C函数，基本上能够满足绝大部分热更新的需要，同时也能够被苹果所接受。
-
-```
-class_addMethod
-NSSelectorFromString
-objc_setAssociatedObject
-objc_getAssociatedObject
-class_getMethodImplementation
-...
-```
+第一种局限性非常大，但是没有用到黑魔法。
 
 #### 采用Objective-C作为更新的脚本语言
 通过flex/yacc，直接解析Objective-C语法，不再采取js/lua等脚本语言。
