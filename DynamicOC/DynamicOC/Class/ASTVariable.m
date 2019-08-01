@@ -10,4 +10,21 @@
 
 @implementation ASTVariable
 
+- (instancetype)toMutableCopy
+{
+	ASTVariable* result = [[ASTVariable alloc]init];
+	result.type = self.type;
+	result.name = self.name;
+	result.value = self.value;
+	result.keyword = self.keyword;
+	result.hasPointer = self.hasPointer;
+	result.hasBlock = self.hasBlock;
+
+	result.postOperation = self.postOperation;
+	result.jumpType = self.jumpType;
+
+	return result;
+}
+
+
 @end

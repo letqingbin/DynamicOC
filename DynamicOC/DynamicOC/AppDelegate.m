@@ -125,6 +125,7 @@
     NSURL *url = [NSURL URLWithString:@\"https://jobs.github.com/positions.json?page=1&search=iOS\"];\
     NSURLRequest *request = [NSURLRequest requestWithURL:url];\
     [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse * response, NSData * data, NSError * connectionError) {\
+		if(!self) return; \
 		[loadingView stopAnimating];\
 		if(data){\
 			NSArray *array = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];\

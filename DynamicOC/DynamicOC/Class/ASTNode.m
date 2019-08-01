@@ -557,10 +557,11 @@ break; \
 - (id)handleUnaryOperation
 {
 	ASTNode* node = self.allChilds[0];
-	ASTVariable* result;
+	ASTVariable* result = [[ASTVariable alloc]init];
 	if(node.type == ASTNodeTypeVariable)
 	{
-		result = [self.context fetchValueFromKey:node.value];
+		ASTVariable* var = [self.context fetchValueFromKey:node.value];
+		result = [var toMutableCopy];
 	}
 	else
 	{
@@ -1085,13 +1086,9 @@ break;	\
 		}
 		else
 		{
-			realResult.type  = result.type;
-			realResult.name  = result.name;
-			realResult.value = result.value;
-			realResult.keyword  = result.keyword;
+			realResult = [result toMutableCopy];
 			realResult.hasBlock = var.hasBlock;
 			realResult.hasPointer = var.hasPointer;
-			realResult.jumpType = result.jumpType;
 		}
 
 		[self.context pushValue:realResult forKey:key];

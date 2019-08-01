@@ -112,7 +112,6 @@
 {
     NSString* text = @"NSNumber* ival = @(0); BOOL ok = !ival; return ok;";
     ASTNode* root = [ASTUtil parseString:text];
-	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == NO, nil);
 }
@@ -121,9 +120,16 @@
 {
     NSString* text = @"NSNumber* ival = nil; BOOL ok = !ival; return ok;";
     ASTNode* root = [ASTUtil parseString:text];
-	
 	ASTVariable* result = [root execute];
     NSAssert([result.value doubleValue] == YES, nil);
+}
+
+- (void)testUnaryNOT3
+{
+	NSString* text = @"NSNumber* ival = nil; !ival; return ival;";
+	ASTNode* root = [ASTUtil parseString:text];
+	ASTVariable* result = [root execute];
+	NSAssert(result.value == nil, nil);
 }
 
 @end

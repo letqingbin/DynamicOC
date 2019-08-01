@@ -24,5 +24,7 @@
 
 // for return/continue/break
 @property(nonatomic,assign) ASTJumpType jumpType;
+
+- (instancetype)toMutableCopy;
 @end
 
