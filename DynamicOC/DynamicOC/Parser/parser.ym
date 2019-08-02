@@ -105,7 +105,7 @@
 %type<t_id> oc_property_expression;
 %type<t_id> oc_array_expression;
 %type<t_id> oc_dictionary_expression;
-%type<t_string> oc_property_keyword;
+%type<t_string> union_variable_keyword;
 
 %type<t_id> type_specifier;
 %type<t_id> type_specifier_list;
@@ -367,7 +367,7 @@ postfix_expression {
 }
 ;
 
-oc_property_keyword:
+union_variable_keyword:
 VARIABLE {
     $$ = $1;
 }
@@ -377,7 +377,7 @@ VARIABLE {
 ;
 
 oc_property_expression:
-KEYWORD '.' oc_property_keyword {
+KEYWORD '.' union_variable_keyword {
     ASTPropertyNode* nodeList = [[ASTPropertyNode alloc]init];
     nodeList.type = ASTNodeTypePropertyList;
     
@@ -391,7 +391,7 @@ KEYWORD '.' oc_property_keyword {
     
     ASTRetainNode(nodeList);
 }
-| postfix_expression '.' oc_property_keyword {
+| postfix_expression '.' union_variable_keyword {
     ASTNode* invoker = $1;
     if(invoker.type == ASTNodeTypePropertyList)
     {
@@ -416,7 +416,7 @@ KEYWORD '.' oc_property_keyword {
         ASTRetainNode(nodeList);
     }
 }
-| postfix_expression OP_PTR oc_property_keyword {
+| postfix_expression OP_PTR union_variable_keyword {
     ASTPropertyNode* node = [[ASTPropertyNode alloc]init];
     node.type = ASTNodeTypeMemberVariables;
     node.invoker  = $1;
@@ -874,7 +874,7 @@ oc_argument:
     
     ASTRetainNode(node);
 }
-| KEYWORD ':' expression    {
+| union_variable_keyword ':' expression    {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeOCArgument];
     $$ = node;
     
@@ -885,7 +885,7 @@ oc_argument:
     
     ASTRetainNode(node);
 }
-| KEYWORD ':' block_statement {
+| union_variable_keyword ':' block_statement {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeOCArgument];
     $$ = node;
     
@@ -915,7 +915,7 @@ oc_argument {
 ;
 
 unary_selector:
-KEYWORD {
+union_variable_keyword {
     ASTNode* node = [ASTUtil unarySelector_node:$1];
     $$ = node;
     
