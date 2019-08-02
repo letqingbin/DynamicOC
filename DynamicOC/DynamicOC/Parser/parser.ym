@@ -1,45 +1,45 @@
 %{
-	#import <Foundation/Foundation.h>
-
-	#import "ASTUtil.h"
-	#import "ASTHeader.h"
+    #import <Foundation/Foundation.h>
+    
+    #import "ASTUtil.h"
+    #import "ASTHeader.h"
     #import "ASTContext.h"
     
-	#import "ASTNode.h"
-	#import "ASTPropertyNode.h"
-	#import "ASTMethodNode.h"
+    #import "ASTNode.h"
+    #import "ASTPropertyNode.h"
+    #import "ASTMethodNode.h"
     #import "ASTBlockNode.h"
-
-	#include <stdio.h>
-	#include <stdlib.h>
-
-	#define YYDEBUG 0
-
-	extern void yyerror(const char *);
-	extern int yylex(void);
-	extern int yyparse(void);
-
-	void parseNode(ASTNode* root);
-
-	static NSMutableArray* gblNodeLists = nil;
-	void ASTRetainNode(ASTNode* node);
-	void ASTReleaseNodes(void);
     
-	extern NSMutableDictionary* gblVariables;
-	BOOL isKnownVariableName(NSString* key);
-	void registerVariableNode(ASTNode *node);
+    #include <stdio.h>
+    #include <stdlib.h>
+    
+    #define YYDEBUG 0
+    
+    extern void yyerror(const char *);
+    extern int yylex(void);
+    extern int yyparse(void);
+    
+    void parseNode(ASTNode* root);
+    
+    static NSMutableArray* gblNodeLists = nil;
+    void ASTRetainNode(ASTNode* node);
+    void ASTReleaseNodes(void);
+    
+    extern NSMutableDictionary* gblVariables;
+    BOOL isKnownVariableName(NSString* key);
+    void registerVariableNode(ASTNode *node);
     
     NSString* toString(const char* text);
     NSString* toStringLiteral(const char* text);
-%}
+    %}
 
 %union
 {
-	int t_int;
-	float t_float;
-	double t_double;
-	__unsafe_unretained NSString* t_string;
-	__unsafe_unretained id t_id;
+    int t_int;
+    float t_float;
+    double t_double;
+    __unsafe_unretained NSString* t_string;
+    __unsafe_unretained id t_id;
 }
 
 %nonassoc LOWER_THAN_ELSE
@@ -105,6 +105,7 @@
 %type<t_id> oc_property_expression;
 %type<t_id> oc_array_expression;
 %type<t_id> oc_dictionary_expression;
+%type<t_string> oc_property_keyword;
 
 %type<t_id> type_specifier;
 %type<t_id> type_specifier_list;
@@ -132,47 +133,47 @@
 
 program
 : statement_list {
-	$$ = $1;
-	parseNode($1);
-	ASTReleaseNodes();
+    $$ = $1;
+    parseNode($1);
+    ASTReleaseNodes();
 }
 ;
 
 statement_list:
 statement_list statement {
-	ASTNode* node = $1;
+    ASTNode* node = $1;
     
     id nilobj = [ASTUtil placeholder_node];
-        
+    
     if($2 == nil)
     {
         $2 = nilobj;
     }
     
     [node addChild:$2];
-	
-	$$ = node;
+    
+    $$ = node;
 }
 | {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeProgram];
-	$$ = node;
-
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeProgram];
+    $$ = node;
+    
+    ASTRetainNode(node);
 }
 ;
 
 statement:
 expression_statement             { $$ = $1; }
 | type_declarator_expression ';' {
-	$$ = $1;
-	registerVariableNode($1);
+    $$ = $1;
+    registerVariableNode($1);
 }
 | block_declarator_expression ';' {
     $$ = $1;
     registerVariableNode($1);
 }
 | selection_statement            { $$ = $1; }
-| compound_statement			 { $$ = $1; }
+| compound_statement             { $$ = $1; }
 | labeled_statement              { $$ = $1; }
 | jump_statement                 { $$ = $1; }
 | iteration_statement            { $$ = $1; }
@@ -181,17 +182,17 @@ expression_statement             { $$ = $1; }
 
 compound_statement:
 '{' statement_list '}' {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeScope];
-	[node addChild:$2];
-	$$ = node;
-
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeScope];
+    [node addChild:$2];
+    $$ = node;
+    
+    ASTRetainNode(node);
 }
 ;
 
 primary_expression:
 VARIABLE {
-	//self/super/variable
+    //self/super/variable
     ASTNode* node = [ASTUtil variable_node:$1];
     $$ = node;
     ASTRetainNode(node);
@@ -306,22 +307,22 @@ primary_expression  {
     $$ = $1;
 }
 | LEFT_PAREN assignment_expression ')' {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeNumber];
-	node.value = $2;
-	$$ = node;
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeNumber];
+    node.value = $2;
+    $$ = node;
+    ASTRetainNode(node);
 }
 | LEFT_BRACE oc_dictionary_expression '}' {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeDictionary];
-	[node addChild:$2];
-	$$ = node;
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeDictionary];
+    [node addChild:$2];
+    $$ = node;
+    ASTRetainNode(node);
 }
 | LEFT_SQUARE oc_array_expression ']' {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeArray];
-	[node addChild:$2];
-	$$ = node;
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeArray];
+    [node addChild:$2];
+    $$ = node;
+    ASTRetainNode(node);
 }
 ;
 
@@ -347,74 +348,83 @@ postfix_expression ':' postfix_expression {
 
 oc_array_expression:
 postfix_expression {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeContainer];
-	[node addChild:$1];
-
-	$$ = node;
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeContainer];
+    [node addChild:$1];
+    
+    $$ = node;
+    ASTRetainNode(node);
 }
 | oc_array_expression ',' postfix_expression {
-	ASTNode* node = $1;
-	[node addChild:$3];
-
-	$$ = node;
+    ASTNode* node = $1;
+    [node addChild:$3];
+    
+    $$ = node;
 }
 | {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeContainer];
-	$$ = node;
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeContainer];
+    $$ = node;
+    ASTRetainNode(node);
+}
+;
+
+oc_property_keyword:
+VARIABLE {
+    $$ = $1;
+}
+| KEYWORD {
+    $$ = $1;
 }
 ;
 
 oc_property_expression:
-KEYWORD '.' KEYWORD {
-	ASTPropertyNode* nodeList = [[ASTPropertyNode alloc]init];
-	nodeList.type = ASTNodeTypePropertyList;
-
-	ASTPropertyNode* node = [ASTUtil property_node];
-	node.invoker  = [ASTUtil keyword_node:$1];
-	node.selector = $3;
-
-	[nodeList addChild:node];
-
-	$$ = nodeList;
-
-	ASTRetainNode(nodeList);
-}
-| postfix_expression '.' KEYWORD {
-	ASTNode* invoker = $1;
-	if(invoker.type == ASTNodeTypePropertyList)
-	{
-		ASTPropertyNode* node = [ASTUtil property_node];
-        node.selector = $3;
-
-		[invoker addChild:node];
-	}
-	else
-	{
-		ASTPropertyNode* nodeList = [[ASTPropertyNode alloc]init];
-		nodeList.type = ASTNodeTypePropertyList;
-
-		ASTPropertyNode* node = [ASTUtil property_node];
-		node.invoker = $1;
-        node.selector = $3;
-
-		[nodeList addChild:node];
-
-		$$ = nodeList;
-
-		ASTRetainNode(nodeList);
-	}
-}
-| postfix_expression OP_PTR KEYWORD {
-	ASTPropertyNode* node = [[ASTPropertyNode alloc]init];
-	node.type = ASTNodeTypeMemberVariables;
-	node.invoker  = $1;
+KEYWORD '.' oc_property_keyword {
+    ASTPropertyNode* nodeList = [[ASTPropertyNode alloc]init];
+    nodeList.type = ASTNodeTypePropertyList;
+    
+    ASTPropertyNode* node = [ASTUtil property_node];
+    node.invoker  = [ASTUtil keyword_node:$1];
     node.selector = $3;
-
-	$$ = node;
-
-	ASTRetainNode(node);
+    
+    [nodeList addChild:node];
+    
+    $$ = nodeList;
+    
+    ASTRetainNode(nodeList);
+}
+| postfix_expression '.' oc_property_keyword {
+    ASTNode* invoker = $1;
+    if(invoker.type == ASTNodeTypePropertyList)
+    {
+        ASTPropertyNode* node = [ASTUtil property_node];
+        node.selector = $3;
+        
+        [invoker addChild:node];
+    }
+    else
+    {
+        ASTPropertyNode* nodeList = [[ASTPropertyNode alloc]init];
+        nodeList.type = ASTNodeTypePropertyList;
+        
+        ASTPropertyNode* node = [ASTUtil property_node];
+        node.invoker = $1;
+        node.selector = $3;
+        
+        [nodeList addChild:node];
+        
+        $$ = nodeList;
+        
+        ASTRetainNode(nodeList);
+    }
+}
+| postfix_expression OP_PTR oc_property_keyword {
+    ASTPropertyNode* node = [[ASTPropertyNode alloc]init];
+    node.type = ASTNodeTypeMemberVariables;
+    node.invoker  = $1;
+    node.selector = $3;
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
 }
 ;
 
@@ -428,9 +438,9 @@ argument_list {
     ASTRetainNode(node);
 }
 | VOID {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeVoid];
-	$$ = node;
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeVoid];
+    $$ = node;
+    ASTRetainNode(node);
 }
 ;
 
@@ -768,8 +778,8 @@ basic_expression { $$ = $1; }
     $$ = node;
     
     ASTRetainNode(node);
-
-	registerVariableNode($1);
+    
+    registerVariableNode($1);
 }
 | block_declarator_expression '=' block_statement {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeAssign];
@@ -783,19 +793,19 @@ basic_expression { $$ = $1; }
     registerVariableNode($1);
 }
 | pointer VARIABLE '=' assignment_expression {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeAssign];
-
-	ASTNode* addressNode = [ASTUtil op_node:ASTNodeTypeAddressAssign];
-	ASTNode* varNode = [ASTUtil variable_node:$2];
-	varNode.hasPointer = YES;
-	[addressNode addChild:varNode];
-
-	[node addChild:addressNode];
-	[node addChild:$4];
-
-	$$ = node;
-
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeAssign];
+    
+    ASTNode* addressNode = [ASTUtil op_node:ASTNodeTypeAddressAssign];
+    ASTNode* varNode = [ASTUtil variable_node:$2];
+    varNode.hasPointer = YES;
+    [addressNode addChild:varNode];
+    
+    [node addChild:addressNode];
+    [node addChild:$4];
+    
+    $$ = node;
+    
+    ASTRetainNode(node);
 }
 | unary_expression '=' assignment_expression {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeAssign];
@@ -845,12 +855,12 @@ oc_argument:
 ':' expression {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeOCArgument];
     $$ = node;
-
-	ASTMethodNode* methodNode = [[ASTMethodNode alloc]init];
-	methodNode.name = @"";
-	methodNode.argument = $2;
-	node.value = methodNode;
-
+    
+    ASTMethodNode* methodNode = [[ASTMethodNode alloc]init];
+    methodNode.name = @"";
+    methodNode.argument = $2;
+    node.value = methodNode;
+    
     ASTRetainNode(node);
 }
 | ':' block_statement {
@@ -867,12 +877,12 @@ oc_argument:
 | KEYWORD ':' expression    {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeOCArgument];
     $$ = node;
-
-	ASTMethodNode* methodNode = [[ASTMethodNode alloc]init];
-	methodNode.name = $1;
-	methodNode.argument = $3;
-	node.value = methodNode;
-
+    
+    ASTMethodNode* methodNode = [[ASTMethodNode alloc]init];
+    methodNode.name = $1;
+    methodNode.argument = $3;
+    node.value = methodNode;
+    
     ASTRetainNode(node);
 }
 | KEYWORD ':' block_statement {
@@ -930,8 +940,8 @@ type_specifier {
 }
 | type_specifier pointer {
     ASTNode* node = $1;
-	node.hasPointer = YES;
-	
+    node.hasPointer = YES;
+    
     [node addChild:$2];
     
     $$ = node;
@@ -946,7 +956,7 @@ type_specifier {
     ASTNode* node = $2;
     node.hasBlock = YES;
     node.hasPointer = YES;
-
+    
     $$ = node;
 }
 ;
@@ -954,24 +964,24 @@ type_specifier {
 
 type_specifier:
 CHAR {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeChar];
-	$$ = node;
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeChar];
+    $$ = node;
+    ASTRetainNode(node);
 }
 | UNSIGNED CHAR {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedChar];
-	$$ = node;
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedChar];
+    $$ = node;
+    ASTRetainNode(node);
 }
 | SHORT {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeShort];
-	$$ = node;
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeShort];
+    $$ = node;
+    ASTRetainNode(node);
 }
 | UNSIGNED SHORT {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedShort];
-	$$ = node;
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedShort];
+    $$ = node;
+    ASTRetainNode(node);
 }
 | INT {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeInt];
@@ -979,9 +989,9 @@ CHAR {
     ASTRetainNode(node);
 }
 | UNSIGNED INT {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedInt];
-	$$ = node;
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedInt];
+    $$ = node;
+    ASTRetainNode(node);
 }
 | LONG {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeLong];
@@ -989,9 +999,9 @@ CHAR {
     ASTRetainNode(node);
 }
 | UNSIGNED LONG {
-	ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedLong];
-	$$ = node;
-	ASTRetainNode(node);
+    ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedLong];
+    $$ = node;
+    ASTRetainNode(node);
 }
 | NSUINTEGER {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeUnsignedLong];
@@ -1028,14 +1038,14 @@ CHAR {
 pointer:
 '*' {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypePointer];
-	node.hasPointer = YES;
+    node.hasPointer = YES;
     $$ = node;
     ASTRetainNode(node);
 }
 | pointer '*' {
     ASTNode* node = $1;
     ASTNode* pointer = [ASTUtil op_node:ASTNodeTypePointer];
-	pointer.hasPointer = YES;
+    pointer.hasPointer = YES;
     [node addChild:pointer];
     
     $$ = $1;
@@ -1068,13 +1078,13 @@ labeled_statement:
 CASE conditional_expression ':' statement {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeCase];
     [node addChild:$2];    //expression
-
-	id nilObj = [ASTUtil placeholder_node];
-	if($4 == nil)
-	{
-		$4 = nilObj;
-	}
-
+    
+    id nilObj = [ASTUtil placeholder_node];
+    if($4 == nil)
+    {
+        $4 = nilObj;
+    }
+    
     [node addChild:$4];    //statement
     $$ = node;
     
@@ -1082,14 +1092,14 @@ CASE conditional_expression ':' statement {
 }
 | DEFAULT ':' statement {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeDefault];
-
-	id nilObj = [ASTUtil placeholder_node];
-
-	if($3 == nil)
-	{
-		$3 = nilObj;
-	}
-
+    
+    id nilObj = [ASTUtil placeholder_node];
+    
+    if($3 == nil)
+    {
+        $3 = nilObj;
+    }
+    
     [node addChild:$3];    //statement
     $$ = node;
     
@@ -1101,13 +1111,13 @@ selection_statement:
 IF '(' expression ')' statement %prec LOWER_THAN_ELSE {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeIf];
     [node addChild:$3];    //expression
-
-	id nilObj = [ASTUtil placeholder_node];
-	if($5 == nil)
-	{
-		$5 = nilObj;
-	}
-
+    
+    id nilObj = [ASTUtil placeholder_node];
+    if($5 == nil)
+    {
+        $5 = nilObj;
+    }
+    
     [node addChild:$5];    //if statement
     $$ = node;
     
@@ -1116,23 +1126,23 @@ IF '(' expression ')' statement %prec LOWER_THAN_ELSE {
 | IF '(' expression ')' statement ELSE statement {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeIf];
     [node addChild:$3];    //expression
-
-	id nilObj = [ASTUtil placeholder_node];
-
-	if($5 == nil)
-	{
-		$5 = nilObj;
-	}
-
+    
+    id nilObj = [ASTUtil placeholder_node];
+    
+    if($5 == nil)
+    {
+        $5 = nilObj;
+    }
+    
     [node addChild:$5];    //if statement
     
     ASTNode* elseNode = [ASTUtil op_node:ASTNodeTypeElse];
-
-	if($7 == nil)
-	{
-		$7 = nilObj;
-	}
-
+    
+    if($7 == nil)
+    {
+        $7 = nilObj;
+    }
+    
     [elseNode addChild:$7];
     [node addChild:elseNode];    //else statement
     $$ = node;
@@ -1141,19 +1151,19 @@ IF '(' expression ')' statement %prec LOWER_THAN_ELSE {
 }
 | SWITCH '(' expression ')' statement {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeSwitch];
-
-	id nilObj = [ASTUtil placeholder_node];
-
-	if($3 == nil)
-	{
-		$3 = nilObj;
-	}
-
-	if($5 == nil)
-	{
-		$5 = nilObj;
-	}
-
+    
+    id nilObj = [ASTUtil placeholder_node];
+    
+    if($3 == nil)
+    {
+        $3 = nilObj;
+    }
+    
+    if($5 == nil)
+    {
+        $5 = nilObj;
+    }
+    
     [node addChild:$3];    //expression
     [node addChild:$5];    //statement
     $$ = node;
@@ -1166,13 +1176,13 @@ iteration_statement
 : WHILE '(' expression ')' statement {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeWhile];
     [node addChild:$3];    //expression
-
-	id nilObj = [ASTUtil placeholder_node];
-	if($5 == nil)
-	{
+    
+    id nilObj = [ASTUtil placeholder_node];
+    if($5 == nil)
+    {
         $5 = nilObj;    //statement
-	}
-
+    }
+    
     [node addChild:$5];
     
     $$ = node;
@@ -1183,39 +1193,39 @@ iteration_statement
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeDoWhile];
     [node addChild:$5];    //expression
     $$ = node;
-
-	id nilObj = [ASTUtil placeholder_node];
-	if($2 == nil)
-	{
+    
+    id nilObj = [ASTUtil placeholder_node];
+    if($2 == nil)
+    {
         $2 = nilObj;    //statement
-	}
+    }
     
     [node addChild:$2];
-
+    
     ASTRetainNode(node);
 }
 | FOR '(' expression_statement expression_statement ')' statement {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeFor];
-
-	id nilObj = [ASTUtil placeholder_node];
-	if($3 == nil)
-	{
-        $3 = nilObj;    //expression
-	}
-
-	if($4 == nil)
-	{
-		$4 = nilObj;    //expression
-	}
     
-	if($6 == nil)
-	{
-		$6 = nilObj;    //statement
-	}
+    id nilObj = [ASTUtil placeholder_node];
+    if($3 == nil)
+    {
+        $3 = nilObj;    //expression
+    }
+    
+    if($4 == nil)
+    {
+        $4 = nilObj;    //expression
+    }
+    
+    if($6 == nil)
+    {
+        $6 = nilObj;    //statement
+    }
     
     [node addChild:$3];
     [node addChild:$4];
-	[node addChild:nilObj];
+    [node addChild:nilObj];
     [node addChild:$6];
     
     $$ = node;
@@ -1224,28 +1234,28 @@ iteration_statement
 }
 | FOR '(' expression_statement expression_statement expression ')' statement {
     ASTNode* node = [ASTUtil op_node:ASTNodeTypeFor];
-
-	id nilObj = [ASTUtil placeholder_node];
-	if($3 == nil)
-	{
-		$3 = nilObj;    //expression
-	}
-
-	if($4 == nil)
-	{
-		$4 = nilObj;    //expression
-	}
-
-	if($5 == nil)
-	{
-		$5 = nilObj;    //expression
-	}
-
-	if($7 == nil)
-	{
-		$7 = nilObj;    //statement
-	}
-
+    
+    id nilObj = [ASTUtil placeholder_node];
+    if($3 == nil)
+    {
+        $3 = nilObj;    //expression
+    }
+    
+    if($4 == nil)
+    {
+        $4 = nilObj;    //expression
+    }
+    
+    if($5 == nil)
+    {
+        $5 = nilObj;    //expression
+    }
+    
+    if($7 == nil)
+    {
+        $7 = nilObj;    //statement
+    }
+    
     [node addChild:$3];
     [node addChild:$4];
     [node addChild:$5];
@@ -1400,7 +1410,7 @@ block_statement:
     ASTNode* nodeScope = [ASTUtil op_node:ASTNodeTypeScope];
     
     ASTNode* voidNode = [ASTUtil op_node:ASTNodeTypeVoid];
-   
+    
     [node addChild:voidNode];
     [node addChild:$3];
     [nodeScope addChild:$6];
@@ -1414,7 +1424,7 @@ block_statement:
     ASTBlockNode* node = [[ASTBlockNode alloc]init];
     node.type = ASTNodeTypeBlock;
     
-    ASTNode* nodeScope = [ASTUtil op_node:ASTNodeTypeScope];    
+    ASTNode* nodeScope = [ASTUtil op_node:ASTNodeTypeScope];
     [node addChild:$2];
     [node addChild:$4];
     [nodeScope addChild:$7];
@@ -1433,51 +1443,51 @@ extern int column;
 
 void yyerror(const char *s)
 {
-	fflush(stdout);
-	printf("\n%*s\n%*s\n", column, "^", column, s);
-
-	column = 0;
+    fflush(stdout);
+    printf("\n%*s\n%*s\n", column, "^", column, s);
+    
+    column = 0;
 }
 
 void ASTRetainNode(ASTNode* node)
 {
-	if(!gblNodeLists)
-	{
-		gblNodeLists = [NSMutableArray array];
-	}
-
-	if(![gblNodeLists containsObject:node])
-	{
-		[gblNodeLists addObject:node];
-	}
+    if(!gblNodeLists)
+    {
+        gblNodeLists = [NSMutableArray array];
+    }
+    
+    if(![gblNodeLists containsObject:node])
+    {
+        [gblNodeLists addObject:node];
+    }
 }
 
 void ASTReleaseNodes(void)
 {
-	[gblNodeLists removeAllObjects];
-	[gblVariables removeAllObjects];
+    [gblNodeLists removeAllObjects];
+    [gblVariables removeAllObjects];
 }
 
 BOOL isKnownVariableName(NSString* key)
 {
-	if(!gblVariables)
-	{
-		gblVariables = [NSMutableDictionary dictionary];
-	}
-
-	return [gblVariables valueForKey:key] != nil;
+    if(!gblVariables)
+    {
+        gblVariables = [NSMutableDictionary dictionary];
+    }
+    
+    return [gblVariables valueForKey:key] != nil;
 }
 
 void registerVariableNode(ASTNode *node)
 {
-	if(node.type == ASTNodeTypeDeclarator
+    if(node.type == ASTNodeTypeDeclarator
     || node.type == ASTNodeTypeBlockDeclarator)
-	{
-		ASTNode* var = node.allChilds[1];
-		NSString* key = var.value;
-
-		[ASTUtil registerVariableForYacc:key];
-	}
+    {
+        ASTNode* var = node.allChilds[1];
+        NSString* key = var.value;
+        
+        [ASTUtil registerVariableForYacc:key];
+    }
 }
 
 NSString* toString(const char* text)
@@ -1497,7 +1507,7 @@ NSString* toStringLiteral(const char* text)
         //start with @"
         start++;
     }
-
+    
     str = [str substringFromIndex:start];
     str = [str substringToIndex:str.length-1];
     
@@ -1507,6 +1517,6 @@ NSString* toStringLiteral(const char* text)
 
 void parseNode(ASTNode* root)
 {
-	gblRootNode = root;
+    gblRootNode = root;
 }
 

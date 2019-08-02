@@ -111,8 +111,8 @@
     [OCCfuntionHelper defineCFunction:@\"objc_getAssociatedObject\" types:@\"id,id,void *\"];\
     [originalInvocation invoke];\
 	self.title = @\"DynamicOC\"; \
-	CGRect rect = CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height-64); \
-    UITableView *tableView = [[UITableView alloc] initWithFrame:rect style:0];\
+	CGRect frame = CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height-64); \
+    UITableView *tableView = [[UITableView alloc] initWithFrame:frame style:0];\
     [self.view addSubview:tableView];\
     tableView.delegate = self;\
     tableView.dataSource = self;\
