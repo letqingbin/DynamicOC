@@ -4,12 +4,6 @@
 # DynamicOC
 DynamicOC是一个功能上与[JSPath](https://github.com/bang590/JSPatch)类似，但是仅需要编写原生OC语法就能实现热更新(hotfix)的功能。
 
-### Warnning
-
-```
-纯粹是技术分享，不要用于上架操作！
-```
-
 ## 功能特点
 
 - 动态执行OC代码
@@ -101,6 +95,12 @@ NSAssert([result.value doubleValue] == 1024, nil);
 
 - GitHub : [dKingbin](https://github.com/dKingbin)
 - Email : loveforjyboss@163.com
+
+### Warnning
+
+```
+纯粹是技术分享，鉴于JSPath的被禁，不建议用于上架Appstore。
+```
 
 ### License
 

@@ -1,9 +1,4 @@
 # iOS 动态化热修复方案
-### Warnning
-
-```
-纯粹是技术分享，不要用于上架操作！
-```
 
 ### 前言
 
@@ -125,6 +120,12 @@ NSAssert([result.value doubleValue] == 1024, nil);
 * [ ] *stop =YES, in block
 * [ ] fix bugs
 
+
+### Warnning
+
+```
+纯粹是技术分享，鉴于JSPath的被禁，不建议用于上架Appstore。
+```
 
 ## 参考链接
 [JSPatch – 动态更新iOS APP](http://blog.cnbang.net/works/2767/)
