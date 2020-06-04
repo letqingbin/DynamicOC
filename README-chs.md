@@ -1,5 +1,5 @@
 
-[English README](https://github.com/dKingbin/DynamicOC/blob/master/README.md)  | [原理介绍](https://github.com/dKingbin/DynamicOC/blob/master/principle_chs.md)
+[English README](https://github.com/letqingbin/DynamicOC/blob/master/README.md)  | [原理介绍](https://github.com/letqingbin/DynamicOC/blob/master/principle_chs.md)
 
 # DynamicOC
 DynamicOC是一个功能上与[JSPath](https://github.com/bang590/JSPatch)类似，但是仅需要编写原生OC语法就能实现热更新(hotfix)的功能。
@@ -93,8 +93,8 @@ NSAssert([result.value doubleValue] == 1024, nil);
 
 ## 联系方式
 
-- GitHub : [dKingbin](https://github.com/dKingbin)
-- Email : loveforjyboss@163.com
+- GitHub : [letqingbin](https://github.com/letqingbin)
+- Email : letqingbin@163.com
 
 ### Warnning
 
@@ -105,7 +105,7 @@ NSAssert([result.value doubleValue] == 1024, nil);
 ### License
 
 ```
-Copyright (c) 2019 dKingbin
+Copyright (c) 2019 letqingbin
 Licensed under MIT or later
 ```
 

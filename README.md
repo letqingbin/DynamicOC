@@ -1,4 +1,4 @@
-[中文介绍](https://github.com/dKingbin/DynamicOC/blob/master/README-chs.md) | [原理介绍](https://github.com/dKingbin/DynamicOC/blob/master/principle_chs.md)
+[中文介绍](https://github.com/letqingbin/DynamicOC/blob/master/README-chs.md) | [原理介绍](https://github.com/letqingbin/DynamicOC/blob/master/principle_chs.md)
 
 # DynamicOC
 A hotfix library based on flex/yacc. You can call any Objective-C class and method using DynamicOC.
@@ -93,8 +93,8 @@ NSAssert([result.value doubleValue] == 1024, nil);
 
 ## Communication
 
-- GitHub : [dKingbin](https://github.com/dKingbin)
-- Email : loveforjyboss@163.com
+- GitHub : [letqingbin](https://github.com/letqingbin)
+- Email : letqingbin@163.com
 
 ### Warnning
 
@@ -105,7 +105,7 @@ Purely technology sharing, DO NOT Sheld to appstore!
 ### License
 
 ```
-Copyright (c) 2019 dKingbin
+Copyright (c) 2019 letqingbin
 Licensed under MIT or later
 ```
 

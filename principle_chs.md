@@ -25,12 +25,12 @@ C语言是没有反射机制的，作为一门编译型语言，在编译期间�
 通过flex/yacc，直接解析Objective-C语法，不再采取js/lua等脚本语言。
 
 ### DynamicOC
-经过上面的思考，在最近业余中做了[DynamicOC](https://github.com/dKingbin/DynamicOC)的项目，百分百原生支持采用Objective-C作为更新的脚本语言。
+经过上面的思考，在最近业余中做了[DynamicOC](https://github.com/letqingbin/DynamicOC)的项目，百分百原生支持采用Objective-C作为更新的脚本语言。
 当然动态运行C函数还是采用dlsym获取函数指针的办法，后面会逐步改为映射表的做法。
 
 #### 原理
 
-[DynamicOC](https://github.com/dKingbin/DynamicOC)使用flex/yacc进行词法解析和语法分析，转为一颗语法生成树AST。
+[DynamicOC](https://github.com/letqingbin/DynamicOC)使用flex/yacc进行词法解析和语法分析，转为一颗语法生成树AST。
 然后通过解析每个节点，从而执行相应的代码。因为采用的是Objective-C作为脚本语言，因此极容易适配。
 
 #### 功能特点
